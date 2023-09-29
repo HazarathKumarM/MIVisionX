@@ -29,6 +29,9 @@ import amd.rocal.types as types
 import rocal_pybind as b
 from amd.rocal.pipeline import Pipeline
 
+def ExternalSource(source):
+    b.ExternalSource(source)
+
 def blend(*inputs,ratio=None):
     kwargs_pybind = {"input_image0":inputs[0], "input_image1":inputs[1], "is_output":False ,"ratio":ratio}
     blend_image = b.Blend(Pipeline._current_pipeline._handle ,*(kwargs_pybind.values()))

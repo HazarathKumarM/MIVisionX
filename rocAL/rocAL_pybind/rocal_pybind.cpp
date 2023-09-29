@@ -599,6 +599,7 @@ namespace rocal{
             py::arg("alpha") = NULL,
             py::arg("beta") = NULL);
         m.def("Brightness",&rocalBrightness);
+        m.def("ExternalSource", &rocalExternalSource);
         m.def("GammaCorrection",&rocalGamma,
             py::return_value_policy::reference,
             py::arg("context"),

@@ -614,6 +614,11 @@ rocalResizeMirrorNormalize(
     return output;
 }
 
+void ROCAL_API_CALL
+rocalExternalSource(const std::string& input){
+    std::cout << "Received string from Python: " << input << std::endl;
+}
+
 RocalImage ROCAL_API_CALL
 rocalBrightness(
         RocalContext p_context,

@@ -133,6 +133,7 @@ extern "C"  RocalImage  ROCAL_API_CALL rocalRotate(RocalContext context, RocalIm
 extern "C"  RocalImage  ROCAL_API_CALL rocalRotateFixed(RocalContext context, RocalImage input, float angle,
                                                     bool is_output, unsigned dest_width = 0, unsigned dest_height = 0);
 
+extern "C" void  ROCAL_API_CALL rocalExternalSource(const std::string& input);
 /// Accepts U8 and RGB24 inputs
 /// \param context
 /// \param input
