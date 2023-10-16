@@ -28,6 +28,47 @@ THE SOFTWARE.
 #include "rocal_api.h"
 
 RocalTensor ROCAL_API_CALL
+rocalExternalSource(
+        RocalContext p_context,
+        RocalTensor p_input,
+        const char* source,
+        RocalTensorOutputType dtype,
+        int size,
+        bool is_output,
+        bool batch)
+{
+    std::cout << "Received string from Python: " << source << std::endl;
+    Tensor* output = nullptr;
+    if ((p_context == nullptr)) {
+        ERR("Invalid ROCAL context")
+        return output;
+    }
+
+    auto context = static_cast<Context*>(p_context);
+    auto input = static_cast<Tensor*>(p_input);
+
+    TensorInfo output_info, input_info;
+    std::vector<size_t> new_dims = {context->user_batch_size(),1};
+    // new_dims.push_back(1);
+    // new_dims.push_back(strlen(source)+1);
+    // input_info = TensorInfo(std::move(new_dims), context->master_graph->mem_type(), RocalTensorDataType::UINT8, RocalTensorlayout::NONE, RocalColorFormat::U8);
+    // output_info = input_info;
+    // auto [width, height] = use_input_dimension ? std::make_tuple(max_width, max_height) : evaluate_image_data_set(decode_size_policy, StorageType::FILE_SYSTEM, DecoderType::TURBO_JPEG, source_path, "");
+    // auto [color_format, tensor_layout, dims, num_of_planes] = convert_color_format(rocal_color_format, context->user_batch_size(), height, width);
+    // INFO("Internal buffer size width = " + TOSTR(width) + " height = " + TOSTR(height) + " depth = " + TOSTR(num_of_planes))
+
+    auto info = TensorInfo(std::move(new_dims),
+                           context->master_graph->mem_type(),
+                           RocalTensorDataType::FP32,// Change according to user passed dtype
+                           RocalTensorlayout::NONE,
+                           RocalColorFormat::U8); // Dummy Format
+    output = context->master_graph->create_tensor(info, is_output);
+    context->master_graph->add_node<ExternalSourceNode>({input}, {output})->init(source, batch);
+    return output;
+}
+
+
+RocalTensor ROCAL_API_CALL
 rocalSequenceRearrange(RocalContext p_context,
                        RocalTensor p_input,
                        std::vector<unsigned int>& new_order,
@@ -1214,7 +1255,7 @@ rocalFlipFixed(
     }
     return output;
 }
-
+/*
 RocalTensor ROCAL_API_CALL
 rocalContrast(
     RocalContext p_context,
@@ -1234,6 +1275,41 @@ rocalContrast(
     auto input = static_cast<Tensor*>(p_input);
     auto contrast_factor = static_cast<FloatParam*>(p_contrast_factor);
     auto contrast_center = static_cast<FloatParam*>(p_contrast_center);
+    try {
+        RocalTensorlayout op_tensor_layout = static_cast<RocalTensorlayout>(output_layout);
+        RocalTensorDataType op_tensor_datatype = static_cast<RocalTensorDataType>(output_datatype);
+        TensorInfo output_info = input->info();
+        output_info.set_tensor_layout(op_tensor_layout);
+        output_info.set_data_type(op_tensor_datatype);
+        output = context->master_graph->create_tensor(output_info, is_output);
+        context->master_graph->add_node<ContrastNode>({input}, {output})->init(contrast_factor, contrast_center);
+    } catch (const std::exception& e) {
+        context->capture_error(e.what());
+        ERR(e.what())
+    }
+    return output;
+}
+*/
+
+RocalTensor ROCAL_API_CALL
+rocalContrast(
+    RocalContext p_context,
+    RocalTensor p_input,
+    bool is_output,
+    RocalTensor p_contrast_factor,
+    RocalTensor p_contrast_center,
+    RocalTensorLayout output_layout,
+    RocalTensorOutputType output_datatype) {
+    Tensor* output = nullptr;
+    if ((p_context == nullptr) || (p_input == nullptr)) {
+        ERR("Invalid ROCAL context or invalid input tensor")
+        return output;
+    }
+
+    auto context = static_cast<Context*>(p_context);
+    auto input = static_cast<Tensor*>(p_input);
+    auto contrast_factor = static_cast<Tensor*>(p_contrast_factor);
+    auto contrast_center = static_cast<Tensor*>(p_contrast_center);
     try {
         RocalTensorlayout op_tensor_layout = static_cast<RocalTensorlayout>(output_layout);
         RocalTensorDataType op_tensor_datatype = static_cast<RocalTensorDataType>(output_datatype);

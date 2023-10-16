@@ -530,6 +530,8 @@ PYBIND11_MODULE(rocal_pybind, m) {
           py::return_value_policy::reference);
     m.def("colorTwist", &rocalColorTwist,
           py::return_value_policy::reference);
+    m.def("ExternalSource", &rocalExternalSource,
+            py::return_value_policy::reference);
     m.def("colorTwistFixed", &rocalColorTwistFixed,
           py::return_value_policy::reference);
     m.def("cropMirrorNormalize", &rocalCropMirrorNormalize,

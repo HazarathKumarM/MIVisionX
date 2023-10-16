@@ -1055,3 +1055,9 @@ def box_iou_matcher(*inputs, anchors, criteria=0.5, high_threshold=0.5,
         Pipeline._current_pipeline._handle, *(kwargs_pybind.values()))
     Pipeline._current_pipeline._box_iou_matcher = True
     return (box_iou_matcher, [])
+
+def ExternalSource(*inputs, source=" ", dtype = "", size=0, batch=True):
+    kwargs_pybind = {"input_image": inputs[0], "input":source, "dtype":dtype, "size":size, "is_output":True, "batch":batch}
+    output = b.ExternalSource(Pipeline._current_pipeline._handle ,*(kwargs_pybind.values()))
+    Pipeline._current_pipeline._external_source_operator = True
+    return (output)

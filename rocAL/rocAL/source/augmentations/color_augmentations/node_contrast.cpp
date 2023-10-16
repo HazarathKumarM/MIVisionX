@@ -32,8 +32,14 @@ void ContrastNode::create_node() {
     if (_node)
         return;
 
-    _factor.create_array(_graph, VX_TYPE_FLOAT32, _batch_size);
-    _center.create_array(_graph, VX_TYPE_FLOAT32, _batch_size);
+    // if(_tensor_factor == nullptr)
+    //     _factor.create_tensor(_graph, VX_TYPE_FLOAT32, _batch_size);
+    // else
+        _factor.create_tensor(_graph, _tensor_factor->info());
+    // if(_tensor_center == nullptr)
+        // _center.create_tensor(_graph, VX_TYPE_FLOAT32, _batch_size);
+    // else
+        _center.create_tensor(_graph, _tensor_center->info());
     int input_layout = static_cast<int>(_inputs[0]->info().layout());
     int output_layout = static_cast<int>(_outputs[0]->info().layout());
     int roi_type = static_cast<int>(_inputs[0]->info().roi_type());
@@ -41,7 +47,7 @@ void ContrastNode::create_node() {
     vx_scalar output_layout_vx = vxCreateScalar(vxGetContext((vx_reference)_graph->get()), VX_TYPE_INT32, &output_layout);
     vx_scalar roi_type_vx = vxCreateScalar(vxGetContext((vx_reference)_graph->get()), VX_TYPE_INT32, &roi_type);
 
-    _node = vxExtRppContrast(_graph->get(), _inputs[0]->handle(), _inputs[0]->get_roi_tensor(), _outputs[0]->handle(), _factor.default_array(), _center.default_array(), input_layout_vx, output_layout_vx,roi_type_vx);
+    _node = vxExtRppContrast(_graph->get(), _inputs[0]->handle(), _inputs[0]->get_roi_tensor(), _outputs[0]->handle(), _tensor_factor->handle(), _tensor_center->handle(), input_layout_vx, output_layout_vx,roi_type_vx);
     vx_status status;
     if ((status = vxGetStatus((vx_reference)_node)) != VX_SUCCESS)
         THROW("Adding the contrast (vxExtRppContrast) node failed: " + TOSTR(status))
@@ -57,7 +63,16 @@ void ContrastNode::init(FloatParam *contrast_factor_param, FloatParam *contrast_
     _center.set_param(core(contrast_center_param));
 }
 
+void ContrastNode::init(Tensor *contrast_factor_param, Tensor *contrast_center_param) {
+    std::cerr << "\n In The init of Tensor*";
+    // std::exit(0);
+    _tensor_factor = contrast_factor_param;
+    _tensor_center = contrast_center_param;
+}
+
 void ContrastNode::update_node() {
-    _factor.update_array();
-    _center.update_array();
+    if(!_tensor_factor)
+        _factor.update_tensor();
+    if(!_tensor_center)
+        _center.update_tensor();
 }
