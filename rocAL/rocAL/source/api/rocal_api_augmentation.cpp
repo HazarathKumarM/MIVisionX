@@ -31,11 +31,11 @@ RocalTensor ROCAL_API_CALL
 rocalExternalSource(
         RocalContext p_context,
         RocalTensor p_input,
+        const char* file_path,
         const char* source,
-        RocalTensorOutputType dtype,
+        int dtype,
         int size,
-        bool is_output,
-        bool batch)
+        bool is_output)
 {
     std::cout << "Received string from Python: " << source << std::endl;
     Tensor* output = nullptr;
@@ -63,7 +63,7 @@ rocalExternalSource(
                            RocalTensorlayout::NONE,
                            RocalColorFormat::U8); // Dummy Format
     output = context->master_graph->create_tensor(info, is_output);
-    context->master_graph->add_node<ExternalSourceNode>({input}, {output})->init(source, batch);
+    context->master_graph->add_node<ExternalSourceNode>({input}, {output})->init(source, file_path, dtype);
     return output;
 }
 

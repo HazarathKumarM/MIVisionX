@@ -31,7 +31,7 @@ class ExternalSourceNode : public Node {
     ExternalSourceNode(const std::vector<Tensor*>& inputs, const std::vector<Tensor*>& outputs);
     ExternalSourceNode() = delete;
 
-    void init(const char* source, bool batchInfo);
+    void init(const char* source, const char* file_path, int dtype);
 
    protected:
     void create_node() override;
@@ -39,5 +39,6 @@ class ExternalSourceNode : public Node {
 
    private:
     char* _source;
-    bool _batchInfo;
+    char* _file_path;
+    int _dtype;
 };

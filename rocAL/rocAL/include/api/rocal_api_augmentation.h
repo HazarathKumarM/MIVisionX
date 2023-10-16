@@ -46,7 +46,7 @@ extern "C" RocalTensor ROCAL_API_CALL rocalSequenceRearrange(RocalContext p_cont
                                                              std::vector<unsigned int> &new_order,
                                                              bool is_output);
 
-extern "C" RocalTensor ROCAL_API_CALL rocalExternalSource(RocalContext context, RocalTensor p_input, const char* input, RocalTensorOutputType dtype, int len, bool is_output, bool batch);
+extern "C" RocalTensor ROCAL_API_CALL rocalExternalSource(RocalContext context, RocalTensor p_input, const char* file_path, const char* input, int dtype, int len, bool is_output);
 /*! \brief Resize images.
  * \note Accepts U8 and RGB24 input.
  * \ingroup group_rocal_augmentations

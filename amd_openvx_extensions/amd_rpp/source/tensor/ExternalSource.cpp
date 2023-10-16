@@ -35,15 +35,20 @@ struct ExternalSourceLocalData {
     RpptRoiType roiType;
     vxTensorLayout inputLayout;
     vxTensorLayout outputLayout;
+    vx_char *pFilePath;
+    vx_uint32 dtype;
     size_t inputTensorDims[RPP_MAX_TENSOR_DIMS];
     size_t ouputTensorDims[RPP_MAX_TENSOR_DIMS];
     size_t charArraySize;
+    size_t filePathSize;
 };
 
 static vx_status VX_CALLBACK refreshExternalSource(vx_node node, const vx_reference *parameters, vx_uint32 num, ExternalSourceLocalData *data) {
     vx_status status = VX_SUCCESS;
     STATUS_ERROR_CHECK(vxCopyArrayRange((vx_array)parameters[3], 0, data->charArraySize, sizeof(vx_char), data->pSource, VX_READ_ONLY, VX_MEMORY_TYPE_HOST));
+    STATUS_ERROR_CHECK(vxCopyArrayRange((vx_array)parameters[8], 0, data->filePathSize, sizeof(vx_char), data->pFilePath, VX_READ_ONLY, VX_MEMORY_TYPE_HOST));
     data->pSource[data->charArraySize] = '\0';
+    data->pFilePath[data->filePathSize] = '\0';
     std::cerr<<"string in openvx "<<data->pSource;
 
     void *roi_tensor_ptr;
@@ -122,13 +127,8 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
     float resultArray[5];
     std::cerr<<"\n process External Source";
 
-    if (PyRun_SimpleString(data->pSource) != 0) {
-        PyErr_Print();
-        return 1;
-    }
-
     PyObject* pArgs = PyTuple_Pack(1, PyLong_FromLong(5)); // Fetch from the user - either sampleInfo or BatchInfo - wrt batch argument
-    PyObject* pModule = PyImport_ImportModule("__main__");
+    PyObject* pModule = PyImport_ImportModule(data->pFilePath);
     // float* temp_res = static_cast<float*>(data->pDst);
     if (pModule) {
         std::cerr << "\n Inside the pModule";
@@ -206,6 +206,8 @@ static vx_status VX_CALLBACK initializeExternalSource(vx_node node, const vx_ref
     // fillDescriptionPtrfromDims(data->pDstDesc, data->outputLayout, data->ouputTensorDims);
 
     STATUS_ERROR_CHECK(vxQueryArray((vx_array)parameters[3], VX_ARRAY_CAPACITY, &data->charArraySize, sizeof(data->charArraySize)));
+    STATUS_ERROR_CHECK(vxQueryArray((vx_array)parameters[8], VX_ARRAY_CAPACITY, &data->filePathSize, sizeof(data->filePathSize)));
+    STATUS_ERROR_CHECK(vxCopyScalar((vx_scalar)parameters[9], &data->dtype, VX_READ_ONLY, VX_MEMORY_TYPE_HOST));
     data->pSource = new char[data->charArraySize + 1];
 
     refreshExternalSource(node, parameters, num, data);
@@ -218,6 +220,7 @@ static vx_status VX_CALLBACK uninitializeExternalSource(vx_node node, const vx_r
     ExternalSourceLocalData *data;
     STATUS_ERROR_CHECK(vxQueryNode(node, VX_NODE_LOCAL_DATA_PTR, &data, sizeof(data)));
     delete data->pSource;
+    delete data->pFilePath;
     delete data->pSrcDesc;
     delete data->pDstDesc;
     STATUS_ERROR_CHECK(releaseRPPHandle(node, data->handle, data->deviceType));
@@ -251,7 +254,7 @@ vx_status ExternalSource_Register(vx_context context) {
     vx_kernel kernel = vxAddUserKernel(context, "org.rpp.ExternalSource",
                                        VX_KERNEL_EXTERNALSOURCE,
                                        processExternalSource,
-                                       8,
+                                       10,
                                        validateExternalSource,
                                        initializeExternalSource,
                                        uninitializeExternalSource);
@@ -277,7 +280,8 @@ vx_status ExternalSource_Register(vx_context context) {
         PARAM_ERROR_CHECK(vxAddParameterToKernel(kernel, 5, VX_INPUT, VX_TYPE_SCALAR, VX_PARAMETER_STATE_REQUIRED));
         PARAM_ERROR_CHECK(vxAddParameterToKernel(kernel, 6, VX_INPUT, VX_TYPE_SCALAR, VX_PARAMETER_STATE_REQUIRED));
         PARAM_ERROR_CHECK(vxAddParameterToKernel(kernel, 7, VX_INPUT, VX_TYPE_SCALAR, VX_PARAMETER_STATE_REQUIRED));
-        // PARAM_ERROR_CHECK(vxAddParameterToKernel(kernel, 8, VX_INPUT, VX_TYPE_SCALAR, VX_PARAMETER_STATE_REQUIRED));
+        PARAM_ERROR_CHECK(vxAddParameterToKernel(kernel, 8, VX_INPUT, VX_TYPE_ARRAY, VX_PARAMETER_STATE_REQUIRED));
+        PARAM_ERROR_CHECK(vxAddParameterToKernel(kernel, 9, VX_INPUT, VX_TYPE_SCALAR, VX_PARAMETER_STATE_REQUIRED));
         PARAM_ERROR_CHECK(vxFinalizeKernel(kernel));
     }
     if (status != VX_SUCCESS) {

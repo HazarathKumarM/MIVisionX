@@ -12,8 +12,6 @@ import inspect
 import builtins
 import ast
 import importlib
-import subprocess
-from external_source_operator import external_source
 import random
 
 def generate_random_numbers(count):
@@ -49,12 +47,10 @@ def main():
     data_path="/media/rpp_audio/MIVisionX-data/rocal_data/coco/coco_10_img/train_10images_2017/"
     decoder_device = 'cpu'
     # Execute the pythonScript containing read_array_from_file definition
-    pythonScript = inspect.getsource(generate_random_numbers)
     data_type = types.UINT8
     file_path = os.path.abspath(__file__)
-    pipe = Pipeline(batch_size=batch_size, num_threads=num_threads, device_id=device_id, seed=random_seed, rocal_cpu=rocal_cpu, tensor_layout=types.NHWC , tensor_dtype=types.UINT8, output_memory_type=types.HOST_MEMORY if rocal_cpu else types.DEVICE_MEMORY)
+    pipe = Pipeline(batch_size=batch_size, num_threads=num_threads, device_id=device_id, seed=random_seed, rocal_cpu=rocal_cpu, tensor_layout=types.NHWC , tensor_dtype=types.FLOAT, output_memory_type=types.HOST_MEMORY if rocal_cpu else types.DEVICE_MEMORY)
     with pipe:
-        # output = fn.ExternalSource(pythonScript, data_type, sys.getsizeof(pythonScript))
         jpegs, _ = fn.readers.file(file_root=data_path)
         images = fn.decoders.image(jpegs,
                                     file_root=data_path,
@@ -65,7 +61,7 @@ def main():
                                     shard_id=local_rank,
                                     num_shards=world_size,
                                     random_shuffle=False)
-        output = external_source(images, filePath = file_path, pythonScript = pythonScript, dtype=data_type, size=5, batch=True)
+        output = fn.external_source_operator(images, file_path = file_path, source = "generate_random_numbers", dtype=types.FLOAT, size=5)
         contrast_output = fn.contrast(images,
                             contrast=output,
                             contrast_center=output)

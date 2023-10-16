@@ -26,13 +26,16 @@ THE SOFTWARE.
 
 ExternalSourceNode::ExternalSourceNode(const std::vector<Tensor *> &inputs, const std::vector<Tensor *> &outputs) : Node(inputs, outputs),
                                                                                                                     _source(),
-                                                                                                                    _batchInfo(){}
+                                                                                                                    _file_path(),
+                                                                                                                    _dtype(){}
 
 void ExternalSourceNode::create_node() {
     if (_node)
         return;
     vx_array charArray = vxCreateArray(vxGetContext((vx_reference)_graph->get()), VX_TYPE_CHAR, strlen(_source));
+    vx_array filePathArray = vxCreateArray(vxGetContext((vx_reference)_graph->get()), VX_TYPE_CHAR, strlen(_file_path));
     vxAddArrayItems(charArray, strlen(_source), _source, sizeof(char));
+    vxAddArrayItems(filePathArray, strlen(_file_path), _file_path, sizeof(char));
     char* stringCheck = new char[strlen(_source) + 1]; // +1 for null terminator
 
     vx_size charArraySize;
@@ -51,18 +54,21 @@ void ExternalSourceNode::create_node() {
     vx_scalar input_layout_vx = vxCreateScalar(vxGetContext((vx_reference)_graph->get()), VX_TYPE_INT32, &input_layout);
     vx_scalar output_layout_vx = vxCreateScalar(vxGetContext((vx_reference)_graph->get()), VX_TYPE_INT32, &output_layout);
     vx_scalar roi_type_vx = vxCreateScalar(vxGetContext((vx_reference)_graph->get()), VX_TYPE_INT32, &roi_type);
-    _node = vxExtExternalSource(_graph->get(), _inputs[0]->handle(), _inputs[0]->get_roi_tensor(), _outputs[0]->handle(), charArray, input_layout_vx, output_layout_vx,roi_type_vx);
+    _node = vxExtExternalSource(_graph->get(), _inputs[0]->handle(), _inputs[0]->get_roi_tensor(), _outputs[0]->handle(), charArray, filePathArray, _dtype, input_layout_vx, output_layout_vx,roi_type_vx);
     vx_status status;
     if ((status = vxGetStatus((vx_reference)_node)) != VX_SUCCESS)
         THROW("Adding the copy (vxCopyNode) node failed: " + TOSTR(status))
     std::cerr<<"\n End of node external Source";
 }
 
-void ExternalSourceNode::init(const char* source, bool batchInfo) {
+void ExternalSourceNode::init(const char* source, const char* file_path, int dtype) {
     _source = new char[strlen(source)+1];
+    _file_path = new char[strlen(file_path)+1];
     strcpy(_source, source);
+    strcpy(_file_path, file_path);
     _source[strlen(source)] = '\0';
-    _batchInfo = batchInfo;
+    _file_path[strlen(file_path)] = '\0';
+    _dtype = dtype;
     std::cerr<<"\n in init source"<<_source;
 }
 
