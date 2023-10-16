@@ -32,6 +32,7 @@ class BlurNode : public Node {
     BlurNode() = delete;
     void init(int kernel_size);
     void init(IntParam *kernel_size_param);
+    void init(Tensor *kernel_size_param);
 
    protected:
     void update_node() override;
@@ -39,5 +40,6 @@ class BlurNode : public Node {
 
    private:
     ParameterVX<int> _kernel_size;
+    Tensor* _tensor_kernel_size;
     constexpr static int KERNEL_SIZE_RANGE[2] = {3, 9};
 };
