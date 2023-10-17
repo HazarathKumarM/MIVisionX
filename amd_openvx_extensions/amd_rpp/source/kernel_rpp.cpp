@@ -1914,8 +1914,10 @@ VX_API_ENTRY vx_node VX_API_CALL vxExtExternalSource(vx_graph graph, vx_tensor p
             (vx_reference)inputLayout,
             (vx_reference)outputLayout,
             (vx_reference)roiType,
-            (vx_reference)deviceType};
-        node = createNode(graph, VX_KERNEL_EXTERNALSOURCE, params, 8);
+            (vx_reference)deviceType,
+            (vx_reference)pFilePath,
+            (vx_reference)DTYPE};
+        node = createNode(graph, VX_KERNEL_EXTERNALSOURCE, params, 10);
     }
     return node;
 }

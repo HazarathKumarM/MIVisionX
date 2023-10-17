@@ -69,7 +69,7 @@ void ExternalSourceNode::init(const char* source, const char* file_path, int dty
     _source[strlen(source)] = '\0';
     _file_path[strlen(file_path)] = '\0';
     _dtype = dtype;
-    std::cerr<<"\n in init source"<<_source;
+    std::cerr<<"\n in init source"<<_file_path;
 }
 
 void ExternalSourceNode::update_node() {

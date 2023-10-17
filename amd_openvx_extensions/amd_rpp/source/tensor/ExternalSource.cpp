@@ -122,17 +122,39 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
     ExternalSourceLocalData *data = NULL;
     STATUS_ERROR_CHECK(vxQueryNode(node, VX_NODE_LOCAL_DATA_PTR, &data, sizeof(data)));
     refreshExternalSource(node, parameters, num, data);
-    // for (uint i =0; i < 5; i++)
-    //     static_cast<float*>(data->pDst)[i] = 10.0;
+
     float resultArray[5];
-    std::cerr<<"\n process External Source";
+
+    char *lastSlash = strrchr(data->pFilePath, '/');
+
+    // Calculate the position of the last slash
+    int slashPosition = lastSlash - data->pFilePath;
+    char directory[slashPosition + 1];
+    char fileName[strlen(data->pFilePath) - slashPosition];
+
+    strncpy(directory, data->pFilePath, slashPosition);
+    directory[slashPosition] = '\0';
+
+    strcpy(fileName, lastSlash + 1);
+
+    char *dotPosition = strrchr(fileName, '.');
+
+    if (dotPosition != nullptr) {
+        // Calculate the position of the dot character
+        int dotIndex = dotPosition - fileName;
+
+        // Replace dot and everything after it with null terminator
+        fileName[dotIndex] = '\0';
+    }
 
     PyObject* pArgs = PyTuple_Pack(1, PyLong_FromLong(5)); // Fetch from the user - either sampleInfo or BatchInfo - wrt batch argument
-    PyObject* pModule = PyImport_ImportModule(data->pFilePath);
+    PyObject* pName = PyUnicode_FromString(fileName);
+    PyObject* pModule = PyImport_Import(pName);
+    std::cerr<<"\n after pModule";
     // float* temp_res = static_cast<float*>(data->pDst);
     if (pModule) {
         std::cerr << "\n Inside the pModule";
-        PyObject* pFunc = PyObject_GetAttrString(pModule, "generate_random_numbers"); // generate_random_numbers (__dict__ - prev)
+        PyObject* pFunc = PyObject_GetAttrString(pModule, data->pSource); // generate_random_numbers (__dict__ - prev)
         if (pFunc && PyCallable_Check(pFunc)) {
             PyObject* pResult = PyObject_CallObject(pFunc, pArgs);
             if (pResult != NULL && PyList_Check(pResult)) {
@@ -209,6 +231,7 @@ static vx_status VX_CALLBACK initializeExternalSource(vx_node node, const vx_ref
     STATUS_ERROR_CHECK(vxQueryArray((vx_array)parameters[8], VX_ARRAY_CAPACITY, &data->filePathSize, sizeof(data->filePathSize)));
     STATUS_ERROR_CHECK(vxCopyScalar((vx_scalar)parameters[9], &data->dtype, VX_READ_ONLY, VX_MEMORY_TYPE_HOST));
     data->pSource = new char[data->charArraySize + 1];
+    data->pFilePath = new char[data->filePathSize + 1];
 
     refreshExternalSource(node, parameters, num, data);
     STATUS_ERROR_CHECK(createRPPHandle(node, &data->handle, data->pSrcDesc->n, data->deviceType));
@@ -226,7 +249,7 @@ static vx_status VX_CALLBACK uninitializeExternalSource(vx_node node, const vx_r
     STATUS_ERROR_CHECK(releaseRPPHandle(node, data->handle, data->deviceType));
     delete data;
     std::cerr<<"\n before finalize";
-    Py_Finalize();
+    // Py_Finalize();
     std::cerr<<"\n After finalize";
     return VX_SUCCESS;
 }

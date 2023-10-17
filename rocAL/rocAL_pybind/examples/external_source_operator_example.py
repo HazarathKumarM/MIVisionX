@@ -61,13 +61,13 @@ def main():
                                     shard_id=local_rank,
                                     num_shards=world_size,
                                     random_shuffle=False)
-        output = fn.external_source_operator(images, file_path = file_path, source = "generate_random_numbers", dtype=types.FLOAT, size=5)
+        output = fn.external_source(images, file_path = file_path, source = "generate_random_numbers", dtype=types.FLOAT, size=5)
         contrast_output = fn.contrast(images,
                             contrast=output,
                             contrast_center=output)
 
         print("output...", output)
-        pipe.set_outputs(output)
+        pipe.set_outputs(contrast_output)
     pipe.build()
     
     # Dataloader
