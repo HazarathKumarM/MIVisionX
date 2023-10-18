@@ -23,6 +23,37 @@ THE SOFTWARE.
 #include "internal_publishKernels.h"
 #include <Python.h>
 
+void castData(int type, void* data, PyObject* pItem, int index) {
+    std::string result;
+    switch(type) {
+        case 0:
+            static_cast<vx_float32*>(data)[index] = (vx_float32)PyFloat_AsDouble(pItem);
+            break;
+        case 1:
+            #if defined(AMD_FP16_SUPPORT)
+                static_cast<vx_float16*>(data)[index] = (vx_float16)PyFloat_AsDouble(pItem);
+            #else
+                std::cerr<<"\n FLOAT16 type tensor not supported";
+                return;
+            #endif
+        case 2:
+            static_cast<uint8_t*>(data)[index] = static_cast<int>((uint8_t)PyLong_AsLong(pItem));
+            break;
+        case 3:
+            static_cast<vx_int8*>(data)[index] = (vx_int8)PyLong_AsLong(pItem);
+            break;
+        case 4:
+            static_cast<vx_uint32*>(data)[index] = (vx_uint32)PyLong_AsLong(pItem);
+            break;
+        case 5:
+            static_cast<vx_int32*>(data)[index] = (vx_int32)PyLong_AsLong(pItem);
+            break;
+        // Handle more data types as needed
+        default:
+            break;
+    }
+}
+
 struct ExternalSourceLocalData {
     vxRppHandle *handle;
     vx_uint32 deviceType;
@@ -127,7 +158,6 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
 
     char *lastSlash = strrchr(data->pFilePath, '/');
 
-    // Calculate the position of the last slash
     int slashPosition = lastSlash - data->pFilePath;
     char directory[slashPosition + 1];
     char fileName[strlen(data->pFilePath) - slashPosition];
@@ -140,10 +170,7 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
     char *dotPosition = strrchr(fileName, '.');
 
     if (dotPosition != nullptr) {
-        // Calculate the position of the dot character
         int dotIndex = dotPosition - fileName;
-
-        // Replace dot and everything after it with null terminator
         fileName[dotIndex] = '\0';
     }
 
@@ -165,7 +192,8 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
                     PyObject* pItem = PyList_GetItem(pResult, i);
                     // resultArray[i] = PyLong_AsLong(pItem); // Use tensor ptr directly
                     std::cerr << "\n (float)PyFloat_AsDouble(pItem)[i] : " << (float)PyFloat_AsDouble(pItem);
-                    static_cast<float*>(data->pDst)[i] = (float)PyFloat_AsDouble(pItem);
+                    // static_cast<float*>(data->pDst)[i] = (float)PyFloat_AsDouble(pItem);
+                    castData(data->dtype, data->pDst, pItem, i);
                     std::cerr << "\n static_cast<float*>(data->pDst)[i] :: " << static_cast<float*>(data->pDst)[i];
                     resultArray[i] = (float)PyFloat_AsDouble(pItem);
                 }
@@ -177,13 +205,13 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
         } else {
             PyErr_Print();
         }
-
+        Py_DECREF(pArgs);
+        Py_DECREF(pName);
         Py_DECREF(pModule);
     } else {
         PyErr_Print();
     }
 
-    Py_DECREF(pArgs);
 
     std::cout << "Result Array: "; // Change this according to dtype fetched from python by using a enum
     for (int i = 0; i < 5; i++) {
@@ -242,14 +270,14 @@ static vx_status VX_CALLBACK initializeExternalSource(vx_node node, const vx_ref
 static vx_status VX_CALLBACK uninitializeExternalSource(vx_node node, const vx_reference *parameters, vx_uint32 num) {
     ExternalSourceLocalData *data;
     STATUS_ERROR_CHECK(vxQueryNode(node, VX_NODE_LOCAL_DATA_PTR, &data, sizeof(data)));
-    delete data->pSource;
-    delete data->pFilePath;
+    delete[] data->pSource;
+    delete[] data->pFilePath;
     delete data->pSrcDesc;
     delete data->pDstDesc;
     STATUS_ERROR_CHECK(releaseRPPHandle(node, data->handle, data->deviceType));
     delete data;
     std::cerr<<"\n before finalize";
-    // Py_Finalize();
+    Py_Finalize();
     std::cerr<<"\n After finalize";
     return VX_SUCCESS;
 }

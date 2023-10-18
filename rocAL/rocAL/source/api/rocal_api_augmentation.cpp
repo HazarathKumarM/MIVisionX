@@ -46,6 +46,7 @@ rocalExternalSource(
 
     auto context = static_cast<Context*>(p_context);
     auto input = static_cast<Tensor*>(p_input);
+    RocalTensorDataType op_tensor_datatype = static_cast<RocalTensorDataType>(dtype);
 
     TensorInfo output_info, input_info;
     std::vector<size_t> new_dims = {context->user_batch_size(),1};
@@ -59,7 +60,7 @@ rocalExternalSource(
 
     auto info = TensorInfo(std::move(new_dims),
                            context->master_graph->mem_type(),
-                           RocalTensorDataType::FP32,// Change according to user passed dtype
+                           op_tensor_datatype,// Change according to user passed dtype
                            RocalTensorlayout::NONE,
                            RocalColorFormat::U8); // Dummy Format
     output = context->master_graph->create_tensor(info, is_output);

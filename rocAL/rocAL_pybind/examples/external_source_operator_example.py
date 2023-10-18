@@ -7,21 +7,24 @@ from parse_config import parse_args
 import os
 import sys
 import cv2
-import cupy as cp
+# import cupy as cp
 import inspect
 import builtins
 import ast
 import importlib
 import random
+import numpy as np
 
 def generate_random_numbers(count):
     """Generate a list of random numbers."""
-    return [1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0]
+    return [1,2,3,4,5,6,7,8,9,10]
 
 def draw_patches(img, idx, device):
     # image is expected as a tensor, bboxes as numpy
     if device == "gpu":
         img = cp.asnumpy(img)
+    # Ensure the image has a compatible depth (e.g., CV_8U) before saving
+    img = img.astype(np.uint8)  # Convert to 8-bit unsigned integers
     # img = img.transpose([0, 2, 3, 1])
     images_list = []
     for im in img:
@@ -47,9 +50,9 @@ def main():
     data_path="/media/rpp_audio/MIVisionX-data/rocal_data/coco/coco_10_img/train_10images_2017/"
     decoder_device = 'cpu'
     # Execute the pythonScript containing read_array_from_file definition
-    data_type = types.UINT8
+    data_type = types.FLOAT
     file_path = os.path.abspath(__file__)
-    pipe = Pipeline(batch_size=batch_size, num_threads=num_threads, device_id=device_id, seed=random_seed, rocal_cpu=rocal_cpu, tensor_layout=types.NHWC , tensor_dtype=types.FLOAT, output_memory_type=types.HOST_MEMORY if rocal_cpu else types.DEVICE_MEMORY)
+    pipe = Pipeline(batch_size=batch_size, num_threads=num_threads, device_id=device_id, seed=random_seed, rocal_cpu=rocal_cpu, tensor_layout=types.NHWC , tensor_dtype=types.UINT32, output_memory_type=types.HOST_MEMORY if rocal_cpu else types.DEVICE_MEMORY)
     with pipe:
         jpegs, _ = fn.readers.file(file_root=data_path)
         images = fn.decoders.image(jpegs,
@@ -61,7 +64,7 @@ def main():
                                     shard_id=local_rank,
                                     num_shards=world_size,
                                     random_shuffle=False)
-        output = fn.external_source(images, file_path = file_path, source = "generate_random_numbers", dtype=types.FLOAT, size=5)
+        output = fn.external_source(images, file_path = file_path, source = "generate_random_numbers", dtype=types.UINT32, size=5)
         contrast_output = fn.contrast(images,
                             contrast=output,
                             contrast_center=output)
