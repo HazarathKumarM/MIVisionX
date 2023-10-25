@@ -36,6 +36,7 @@ void castData(int type, void* data, PyObject* pItem, int index) {
                 std::cerr<<"\n FLOAT16 type tensor not supported";
                 return;
             #endif
+            break;
         case 2:
             static_cast<uint8_t*>(data)[index] = static_cast<int>((uint8_t)PyLong_AsLong(pItem));
             break;
@@ -153,9 +154,6 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
     ExternalSourceLocalData *data = NULL;
     STATUS_ERROR_CHECK(vxQueryNode(node, VX_NODE_LOCAL_DATA_PTR, &data, sizeof(data)));
     refreshExternalSource(node, parameters, num, data);
-
-    float resultArray[5];
-
     char *lastSlash = strrchr(data->pFilePath, '/');
 
     int slashPosition = lastSlash - data->pFilePath;
@@ -173,29 +171,34 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
         int dotIndex = dotPosition - fileName;
         fileName[dotIndex] = '\0';
     }
+    std::string directoryStr(directory);
+    std::string pythonCode = "import sys\n";
+    pythonCode += "sys.path.append('" + directoryStr + "')\n";
+    std::cerr<<"\n PythonCode "<< pythonCode;
+
+    PyRun_SimpleString(pythonCode.c_str());
 
     PyObject* pArgs = PyTuple_Pack(1, PyLong_FromLong(5)); // Fetch from the user - either sampleInfo or BatchInfo - wrt batch argument
     PyObject* pName = PyUnicode_FromString(fileName);
     PyObject* pModule = PyImport_Import(pName);
-    std::cerr<<"\n after pModule";
     // float* temp_res = static_cast<float*>(data->pDst);
     if (pModule) {
         std::cerr << "\n Inside the pModule";
         PyObject* pFunc = PyObject_GetAttrString(pModule, data->pSource); // generate_random_numbers (__dict__ - prev)
         if (pFunc && PyCallable_Check(pFunc)) {
             PyObject* pResult = PyObject_CallObject(pFunc, pArgs);
+            PyObject* pItem;
             if (pResult != NULL && PyList_Check(pResult)) {
                 std::cerr << "\n CONDITION CHECK ";
                 // std::exit(0);
                 int listSize = PyList_Size(pResult);
                 for (int i = 0; i < 5; i++) { // SampleInfo - Need to Handle BatchInfo
-                    PyObject* pItem = PyList_GetItem(pResult, i);
+                    pItem = PyList_GetItem(pResult, i);
                     // resultArray[i] = PyLong_AsLong(pItem); // Use tensor ptr directly
                     std::cerr << "\n (float)PyFloat_AsDouble(pItem)[i] : " << (float)PyFloat_AsDouble(pItem);
                     // static_cast<float*>(data->pDst)[i] = (float)PyFloat_AsDouble(pItem);
                     castData(data->dtype, data->pDst, pItem, i);
                     std::cerr << "\n static_cast<float*>(data->pDst)[i] :: " << static_cast<float*>(data->pDst)[i];
-                    resultArray[i] = (float)PyFloat_AsDouble(pItem);
                 }
                 Py_DECREF(pResult);
             } else {
@@ -211,21 +214,13 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
     } else {
         PyErr_Print();
     }
-
-
-    std::cout << "Result Array: "; // Change this according to dtype fetched from python by using a enum
-    for (int i = 0; i < 5; i++) {
-        std::cout << resultArray[i] << " ";
-    }
-    std::cout << std::endl;
     return return_status;
 }
 
 static vx_status VX_CALLBACK initializeExternalSource(vx_node node, const vx_reference *parameters, vx_uint32 num) {
     ExternalSourceLocalData *data = new ExternalSourceLocalData;
     memset(data, 0, sizeof(ExternalSourceLocalData));
-    Py_Initialize(); 
-
+    Py_Initialize();
     vx_enum input_tensor_dtype, output_tensor_dtype;
     vx_int32 roi_type, input_layout, output_layout;
     STATUS_ERROR_CHECK(vxCopyScalar((vx_scalar)parameters[4], &input_layout, VX_READ_ONLY, VX_MEMORY_TYPE_HOST));
@@ -275,9 +270,9 @@ static vx_status VX_CALLBACK uninitializeExternalSource(vx_node node, const vx_r
     delete data->pSrcDesc;
     delete data->pDstDesc;
     STATUS_ERROR_CHECK(releaseRPPHandle(node, data->handle, data->deviceType));
-    delete data;
     std::cerr<<"\n before finalize";
     Py_Finalize();
+    delete data;
     std::cerr<<"\n After finalize";
     return VX_SUCCESS;
 }

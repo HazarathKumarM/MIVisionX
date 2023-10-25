@@ -647,7 +647,11 @@ int test(int test_case, int reader_type, const char *path, const char *outName, 
             output = rocalResizeMirrorNormalize(handle, input, 400, 400, mean, std_dev, true, ROCAL_SCALING_MODE_DEFAULT,
                                                 {}, 0, 0, ROCAL_LINEAR_INTERPOLATION, mirror);
         } break;
-
+        case 57:{
+            std::cout << ">>>>>>> Running "
+                      << "rocalExternalSourceFixed" << std::endl;
+            output = rocalExternalSource(handle, input, "/home/sloganat/WORKSPACE/hazarath/external_source/MIVisionX/rocAL/rocAL_pybind/examples/exmpl.py", "generate_random_numbers", 0, 5, true);
+        } break;
         default:
             std::cout << "Not a valid option! Exiting!\n";
             return -1;
