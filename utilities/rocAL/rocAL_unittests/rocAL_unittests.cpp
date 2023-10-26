@@ -340,6 +340,7 @@ int test(int test_case, int reader_type, const char *path, const char *outName, 
     RocalTensor input = decoded_output;
     // RocalTensor input = rocalResize(handle, decoded_output, resize_w, resize_h, false); // uncomment when processing images of different size
     RocalTensor output;
+    RocalTensor external_source_output;
 
     if ((test_case == 48 || test_case == 49 || test_case == 50) && rgb == 0) {
         std::cout << "Not a valid option! Exiting!\n";
@@ -649,8 +650,9 @@ int test(int test_case, int reader_type, const char *path, const char *outName, 
         } break;
         case 57:{
             std::cout << ">>>>>>> Running "
-                      << "rocalExternalSourceFixed" << std::endl;
-            output = rocalExternalSource(handle, input, "/home/sloganat/WORKSPACE/hazarath/external_source/MIVisionX/rocAL/rocAL_pybind/examples/exmpl.py", "generate_random_numbers", 0, 5, true);
+                      << "rocalExternalSource" << std::endl;
+            external_source_output = rocalExternalSource(handle, input, "/home/sloganat/WORKSPACE/hazarath/external_source/MIVisionX/rocAL/rocAL_pybind/examples/exmpl.py", "generate_random_numbers", 0, 5, false);
+            output = rocalContrast(handle, input, true, external_source_output, external_source_output);
         } break;
         default:
             std::cout << "Not a valid option! Exiting!\n";

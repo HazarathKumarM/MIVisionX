@@ -190,7 +190,6 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
             PyObject* pItem;
             if (pResult != NULL && PyList_Check(pResult)) {
                 std::cerr << "\n CONDITION CHECK ";
-                // std::exit(0);
                 int listSize = PyList_Size(pResult);
                 for (int i = 0; i < 5; i++) { // SampleInfo - Need to Handle BatchInfo
                     pItem = PyList_GetItem(pResult, i);
