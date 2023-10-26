@@ -219,7 +219,6 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
 static vx_status VX_CALLBACK initializeExternalSource(vx_node node, const vx_reference *parameters, vx_uint32 num) {
     ExternalSourceLocalData *data = new ExternalSourceLocalData;
     memset(data, 0, sizeof(ExternalSourceLocalData));
-    Py_Initialize();
     vx_enum input_tensor_dtype, output_tensor_dtype;
     vx_int32 roi_type, input_layout, output_layout;
     STATUS_ERROR_CHECK(vxCopyScalar((vx_scalar)parameters[4], &input_layout, VX_READ_ONLY, VX_MEMORY_TYPE_HOST));
@@ -270,7 +269,6 @@ static vx_status VX_CALLBACK uninitializeExternalSource(vx_node node, const vx_r
     delete data->pDstDesc;
     STATUS_ERROR_CHECK(releaseRPPHandle(node, data->handle, data->deviceType));
     std::cerr<<"\n before finalize";
-    Py_Finalize();
     delete data;
     std::cerr<<"\n After finalize";
     return VX_SUCCESS;

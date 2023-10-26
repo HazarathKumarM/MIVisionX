@@ -31,6 +31,7 @@ THE SOFTWARE.
 #include <iostream>
 #include <string>
 #include <vector>
+#include <Python.h>
 
 #include "opencv2/opencv.hpp"
 #include "rocal_api.h"
@@ -101,7 +102,7 @@ std::string get_scaling_mode(unsigned int val, RocalResizeScalingMode &scale_mod
     }
 }
 
-int test(int test_case, int reader_type, const char *path, const char *outName, int rgb, int gpu, int width, int height, int num_of_classes, int display_all, int resize_interpolation_type, int resize_scaling_mode);
+int test(int test_case, int reader_type, const char *path, const char *outName, int rgb, int gpu, int width, int height, int num_of_classes, int display_all, int resize_interpolation_type, int resize_scaling_mode, const char* es_file_path, const char* es_source);
 int main(int argc, const char **argv) {
     // check command-line usage
     const int MIN_ARG_COUNT = 2;
@@ -117,6 +118,8 @@ int main(int argc, const char **argv) {
     int width = atoi(argv[++argIdx]);
     int height = atoi(argv[++argIdx]);
     int display_all = 0;
+    const char *es_file_path = NULL;
+    const char *es_source=NULL;
 
     int rgb = 1;  // process color images
     bool gpu = 1;
@@ -141,17 +144,23 @@ int main(int argc, const char **argv) {
         display_all = atoi(argv[++argIdx]);
 
     if (argc >= argIdx + MIN_ARG_COUNT)
+        es_file_path = argv[++argIdx];
+
+    if (argc >= argIdx + MIN_ARG_COUNT)
+        es_source = argv[++argIdx];
+
+    if (argc >= argIdx + MIN_ARG_COUNT)
         resize_interpolation_type = atoi(argv[++argIdx]);
 
     if (argc >= argIdx + MIN_ARG_COUNT)
         resize_scaling_mode = atoi(argv[++argIdx]);
 
-    test(test_case, reader_type, path, outName, rgb, gpu, width, height, num_of_classes, display_all, resize_interpolation_type, resize_scaling_mode);
+    test(test_case, reader_type, path, outName, rgb, gpu, width, height, num_of_classes, display_all, resize_interpolation_type, resize_scaling_mode, es_file_path, es_source);
 
     return 0;
 }
 
-int test(int test_case, int reader_type, const char *path, const char *outName, int rgb, int gpu, int width, int height, int num_of_classes, int display_all, int resize_interpolation_type, int resize_scaling_mode) {
+int test(int test_case, int reader_type, const char *path, const char *outName, int rgb, int gpu, int width, int height, int num_of_classes, int display_all, int resize_interpolation_type, int resize_scaling_mode, const char* es_file_path, const char* es_source) {
     size_t num_threads = 1;
     unsigned int inputBatchSize = 2;
     int decode_max_width = width;
@@ -342,6 +351,11 @@ int test(int test_case, int reader_type, const char *path, const char *outName, 
     RocalTensor output;
     RocalTensor external_source_output;
 
+    if(es_file_path != NULL && es_source != NULL) {
+        Py_Initialize();
+        external_source_output = rocalExternalSource(handle, input, es_file_path, es_source, 0, 5, false);
+    }
+
     if ((test_case == 48 || test_case == 49 || test_case == 50) && rgb == 0) {
         std::cout << "Not a valid option! Exiting!\n";
         return -1;
@@ -391,7 +405,7 @@ int test(int test_case, int reader_type, const char *path, const char *outName, 
         case 5: {
             std::cout << ">>>>>>> Running "
                       << "rocalContrast" << std::endl;
-            output = rocalContrast(handle, input, true);
+            output = rocalContrast(handle, input, true, external_source_output, external_source_output);
         } break;
         case 6: {
             std::cout << ">>>>>>> Running "
@@ -648,12 +662,13 @@ int test(int test_case, int reader_type, const char *path, const char *outName, 
             output = rocalResizeMirrorNormalize(handle, input, 400, 400, mean, std_dev, true, ROCAL_SCALING_MODE_DEFAULT,
                                                 {}, 0, 0, ROCAL_LINEAR_INTERPOLATION, mirror);
         } break;
-        case 57:{
-            std::cout << ">>>>>>> Running "
-                      << "rocalExternalSource" << std::endl;
-            external_source_output = rocalExternalSource(handle, input, "/home/sloganat/WORKSPACE/hazarath/external_source/MIVisionX/rocAL/rocAL_pybind/examples/exmpl.py", "generate_random_numbers", 0, 5, false);
-            output = rocalContrast(handle, input, true, external_source_output, external_source_output);
-        } break;
+        // case 57:{
+        //     Py_Initialize();
+        //     std::cout << ">>>>>>> Running "
+        //               << "rocalExternalSource" << std::endl;
+        //     external_source_output = rocalExternalSource(handle, input, "/home/sloganat/WORKSPACE/hazarath/external_source/MIVisionX/rocAL/rocAL_pybind/examples/exmpl.py", "generate_random_numbers", 0, 5, false);
+        //     output = rocalContrast(handle, input, true, external_source_output, external_source_output);
+        // } break;
         default:
             std::cout << "Not a valid option! Exiting!\n";
             return -1;
@@ -814,6 +829,8 @@ int test(int test_case, int reader_type, const char *path, const char *outName, 
     std::cout << "Process  time " << rocal_timing.process_time << std::endl;
     std::cout << "Transfer time " << rocal_timing.transfer_time << std::endl;
     std::cout << ">>>>> Total Elapsed Time " << dur / 1000000 << " sec " << dur % 1000000 << " us " << std::endl;
+    if(es_file_path != NULL && es_source != NULL)
+        Py_Finalize();
     rocalRelease(handle);
     mat_input.release();
     mat_output.release();
