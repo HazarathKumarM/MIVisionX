@@ -191,13 +191,13 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
             if (pResult != NULL && PyList_Check(pResult)) {
                 std::cerr << "\n CONDITION CHECK ";
                 int listSize = PyList_Size(pResult);
-                for (int i = 0; i < 5; i++) { // SampleInfo - Need to Handle BatchInfo
+                for (int i = 0; i < data->pSrcDesc->n; i++) { // SampleInfo - Need to Handle BatchInfo
                     pItem = PyList_GetItem(pResult, i);
                     // resultArray[i] = PyLong_AsLong(pItem); // Use tensor ptr directly
-                    std::cerr << "\n (float)PyFloat_AsDouble(pItem)[i] : " << (float)PyFloat_AsDouble(pItem);
+                    std::cerr << "\n (int)PyFloat_AsDouble(pItem)[i] : " << (int)PyFloat_AsDouble(pItem);
                     // static_cast<float*>(data->pDst)[i] = (float)PyFloat_AsDouble(pItem);
                     castData(data->dtype, data->pDst, pItem, i);
-                    std::cerr << "\n static_cast<float*>(data->pDst)[i] :: " << static_cast<float*>(data->pDst)[i];
+                    std::cerr << "\n static_cast<int*>(data->pDst)[i] :: " << static_cast<int*>(data->pDst)[i];
                 }
                 Py_DECREF(pResult);
             } else {
@@ -219,7 +219,6 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
 static vx_status VX_CALLBACK initializeExternalSource(vx_node node, const vx_reference *parameters, vx_uint32 num) {
     ExternalSourceLocalData *data = new ExternalSourceLocalData;
     memset(data, 0, sizeof(ExternalSourceLocalData));
-    Py_Initialize();
     vx_enum input_tensor_dtype, output_tensor_dtype;
     vx_int32 roi_type, input_layout, output_layout;
     STATUS_ERROR_CHECK(vxCopyScalar((vx_scalar)parameters[4], &input_layout, VX_READ_ONLY, VX_MEMORY_TYPE_HOST));
@@ -248,7 +247,7 @@ static vx_status VX_CALLBACK initializeExternalSource(vx_node node, const vx_ref
     data->pDstDesc->dataType = getRpptDataType(output_tensor_dtype);
     data->pDstDesc->offsetInBytes = 0;
     // fillDescriptionPtrfromDims(data->pDstDesc, data->outputLayout, data->ouputTensorDims);
-
+    data->pSrcDesc->n = data->ouputTensorDims[0];
     STATUS_ERROR_CHECK(vxQueryArray((vx_array)parameters[3], VX_ARRAY_CAPACITY, &data->charArraySize, sizeof(data->charArraySize)));
     STATUS_ERROR_CHECK(vxQueryArray((vx_array)parameters[8], VX_ARRAY_CAPACITY, &data->filePathSize, sizeof(data->filePathSize)));
     STATUS_ERROR_CHECK(vxCopyScalar((vx_scalar)parameters[9], &data->dtype, VX_READ_ONLY, VX_MEMORY_TYPE_HOST));
@@ -268,11 +267,8 @@ static vx_status VX_CALLBACK uninitializeExternalSource(vx_node node, const vx_r
     delete[] data->pFilePath;
     delete data->pSrcDesc;
     delete data->pDstDesc;
-    STATUS_ERROR_CHECK(releaseRPPHandle(node, data->handle, data->deviceType));
-    std::cerr<<"\n before finalize";
-    Py_Finalize();
+    STATUS_ERROR_CHECK(releaseRPPHandle(node, data->handle, data->deviceType));    
     delete data;
-    std::cerr<<"\n After finalize";
     return VX_SUCCESS;
 }
 

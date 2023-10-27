@@ -62,6 +62,13 @@ bool validate_uniform_rand_param(pParam rand_obj) {
     return ret;
 }
 
+// void core_param(pParam object) {
+//     std::visit([](auto&& arg) {
+//                 core(arg);
+//             },
+//             object);
+// }
+
 ParameterFactory::ParameterFactory() {
     generate_seed();
 }

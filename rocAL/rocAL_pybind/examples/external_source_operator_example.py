@@ -17,7 +17,7 @@ import numpy as np
 
 def generate_random_numbers(count):
     """Generate a list of random numbers."""
-    return [1,2,3,4,5,6,7,8,9,10]
+    return [1,2,3,4,5]
 
 def draw_patches(img, idx, device):
     # image is expected as a tensor, bboxes as numpy
@@ -31,7 +31,7 @@ def draw_patches(img, idx, device):
         images_list.append(im)
     img = cv2.vconcat(images_list)
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-    cv2.imwrite("external_source_contrast" + ".png", img,
+    cv2.imwrite("eso_blur" + str(idx) + ".png", img,
                 [cv2.IMWRITE_PNG_COMPRESSION, 9])
 
 
@@ -47,12 +47,12 @@ def main():
     max_height = 720
     max_width = 640
     color_format = types.RGB
-    data_path="/media/rpp_audio/MIVisionX-data/rocal_data/coco/coco_10_img/train_10images_2017/"
+    data_path="/media/MIVisionX-data/rocal_data/coco/coco_10_img/train_10images_2017/"
     decoder_device = 'cpu'
     # Execute the pythonScript containing read_array_from_file definition
     data_type = types.FLOAT
     file_path = os.path.abspath(__file__)
-    pipe = Pipeline(batch_size=batch_size, num_threads=num_threads, device_id=device_id, seed=random_seed, rocal_cpu=rocal_cpu, tensor_layout=types.NHWC , tensor_dtype=types.FLOAT, output_memory_type=types.HOST_MEMORY if rocal_cpu else types.DEVICE_MEMORY)
+    pipe = Pipeline(batch_size=batch_size, num_threads=num_threads, device_id=device_id, seed=random_seed, rocal_cpu=rocal_cpu, tensor_layout=types.NHWC , tensor_dtype=types.INT, output_memory_type=types.HOST_MEMORY if rocal_cpu else types.DEVICE_MEMORY)
     with pipe:
         jpegs, _ = fn.readers.file(file_root=data_path)
         images = fn.decoders.image(jpegs,
@@ -64,13 +64,14 @@ def main():
                                     shard_id=local_rank,
                                     num_shards=world_size,
                                     random_shuffle=False)
-        output = fn.external_source(images, file_path = file_path, source = "generate_random_numbers", dtype=types.FLOAT, size=10)
-        contrast_output = fn.contrast(images,
-                            contrast=output,
-                            contrast_center=output)
+        output = fn.external_source(images, file_path = file_path, source = "generate_random_numbers", dtype=types.INT, size=batch_size)
+        # contrast_output = fn.contrast(images,
+        #                     contrast=output,
+        #                     contrast_center=output)
+        # blur_output = fn.blur(images, window_size=output)
 
         print("output...", output)
-        pipe.set_outputs(contrast_output)
+        pipe.set_outputs(output)
     pipe.build()
     
     # Dataloader

@@ -128,8 +128,10 @@ static vx_status VX_CALLBACK processContrast(vx_node node, const vx_reference *p
         return_status = (rpp_status == RPP_SUCCESS) ? VX_SUCCESS : VX_FAILURE;
 #endif
     } else if (data->deviceType == AGO_TARGET_AFFINITY_CPU) {
-        for (uint i =0; i < 5; i++)
+        for (uint i =0; i < 2; i++) {
             std::cerr << "\n data->pContrastCenter[i]" << data->pContrastCenter[i];
+            std::cerr << "\n data->pContrastFactor[i]" << data->pContrastFactor[i];
+        }
         rpp_status = rppt_contrast_host(data->pSrc, data->pSrcDesc, data->pDst, data->pDstDesc, data->pContrastFactor, data->pContrastCenter, data->pSrcRoi, data->roiType, data->handle->rppHandle);
         return_status = (rpp_status == RPP_SUCCESS) ? VX_SUCCESS : VX_FAILURE;
     }

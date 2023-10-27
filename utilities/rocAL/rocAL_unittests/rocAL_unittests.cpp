@@ -391,7 +391,13 @@ int test(int test_case, int reader_type, const char *path, const char *outName, 
         case 5: {
             std::cout << ">>>>>>> Running "
                       << "rocalContrast" << std::endl;
-            output = rocalContrast(handle, input, true);
+
+            const size_t num_values = 2;
+            float values[num_values] = {3.0, 7.0};
+            double frequencies[num_values] = {1, 1};
+            RocalTensor contrast_factor = rocalCreateFloatRand(handle, values, frequencies, num_values);
+            RocalTensor contrast_centre = rocalCreateFloatRand(handle, values, frequencies, num_values);
+            output = rocalContrast(handle, input, true, contrast_factor, contrast_centre);
         } break;
         case 6: {
             std::cout << ">>>>>>> Running "

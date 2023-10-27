@@ -63,7 +63,11 @@ rocalExternalSource(
                            op_tensor_datatype,// Change according to user passed dtype
                            RocalTensorlayout::NONE,
                            RocalColorFormat::U8); // Dummy Format
+    info.set_external_source();
+    std::cerr << "\n In ESO - check if its set or not - " << info.is_external_source();
     output = context->master_graph->create_tensor(info, is_output);
+    // info.set_external_source();
+    std::cerr << "\n In ESO - check if its set or not - " << const_cast<TensorInfo&>(output->info()).is_external_source();
     context->master_graph->add_node<ExternalSourceNode>({input}, {output})->init(source, file_path, dtype);
     return output;
 }
@@ -742,7 +746,7 @@ rocalBlur(
     RocalContext p_context,
     RocalTensor p_input,
     bool is_output,
-    RocalIntParam p_kernel_size,
+    RocalTensor p_kernel_size,
     RocalTensorLayout output_layout,
     RocalTensorOutputType output_datatype) {
     Tensor* output = nullptr;
@@ -753,7 +757,8 @@ rocalBlur(
 
     auto context = static_cast<Context*>(p_context);
     auto input = static_cast<Tensor*>(p_input);
-    auto kernel_size = static_cast<IntParam*>(p_kernel_size);
+    auto kernel_size = static_cast<Tensor*>(p_kernel_size);
+    // auto kernel_size = static_cast<IntParam*>(p_kernel_size);
     try {
         RocalTensorlayout op_tensor_layout = static_cast<RocalTensorlayout>(output_layout);
         RocalTensorDataType op_tensor_datatype = static_cast<RocalTensorDataType>(output_datatype);

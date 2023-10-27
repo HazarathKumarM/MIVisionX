@@ -31,11 +31,9 @@ void BlurNode::create_node() {
     if (_node)
         return;
 
-    // _kernel_size.create_array(_graph, VX_TYPE_UINT32, _batch_size);
-    if(!_tensor_kernel_size)
+    if(_tensor_kernel_size->info().is_external_source() == false)
         _kernel_size.create_tensor(_graph, VX_TYPE_UINT32, _batch_size);
-    else
-        _kernel_size.create_tensor(_graph, _tensor_kernel_size->info());
+
     int input_layout = static_cast<int>(_inputs[0]->info().layout());
     int output_layout = static_cast<int>(_outputs[0]->info().layout());
     int roi_type = static_cast<int>(_inputs[0]->info().roi_type());
@@ -53,14 +51,20 @@ void BlurNode::init(int kernel_size) {
     _kernel_size.set_param(kernel_size);
 }
 
-void BlurNode::init(IntParam *kernel_size_param) {
-    _kernel_size.set_param(core(kernel_size_param));
-}
-
 void BlurNode::init(Tensor *kernel_size_param) {
     _tensor_kernel_size = kernel_size_param;
+        
+    if(_tensor_kernel_size->info().is_external_source() == false) {
+        _kernel_size.set_param(core(std::get<IntParam*>(kernel_size_param->get_param())));
+        std::cerr << "\n _tensor_kernel_size->info().is_external_source() == false";
+    } else {
+        std::cerr << "\n External Source Outputs is set here";
+        std::cerr << "\n TRUE";
+        _kernel_size.set_tensor(kernel_size_param->handle());
+    }
 }
 
 void BlurNode::update_node() {
-    _kernel_size.update_tensor();
+    if(_tensor_kernel_size->info().is_external_source() == false)
+        _kernel_size.update_tensor();
 }

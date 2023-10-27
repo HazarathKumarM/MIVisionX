@@ -25,7 +25,7 @@ THE SOFTWARE.
 #include <VX/vx_types.h>
 
 #include <vector>
-
+#include "tensor.h"
 #include "parameter_factory.h"
 
 template <typename T>
@@ -80,6 +80,10 @@ class ParameterVX {
         _tensor = vxCreateTensorFromHandle(vxGetContext((vx_reference)graph->get()), 1, dims, data_type, 0, stride_output, _arrVal.data(), VX_MEMORY_TYPE_HOST);
         update_tensor();
     }
+    void set_tensor(vx_tensor external_source_tensor) {
+        _tensor = external_source_tensor;   
+    }
+    
     void set_param(Parameter<T>* param) {
         if (!param)
             return;
@@ -124,6 +128,7 @@ class ParameterVX {
         vx_status status;
         for (uint i = 0; i < _batch_size; i++) {
             _arrVal[i] = renew();
+            std::cerr << "\n _arrVal[i] : " << _arrVal[i];
             // INFO("update_array: " + TOSTR(i) + "," + TOSTR(_arrVal[i]));
         }
         status = vxCopyArrayRange((vx_array)_array, 0, _batch_size, sizeof(T), _arrVal.data(), VX_WRITE_ONLY, VX_MEMORY_TYPE_HOST);
@@ -135,6 +140,7 @@ class ParameterVX {
         vx_status status;
         for (uint i = 0; i < _batch_size; i++) { 
             _arrVal[i] = renew();
+            std::cerr << "\n _arrVal[i] : " << _arrVal[i];
         }
         status = vxCopyTensorPatch((vx_tensor)_tensor, info.num_of_dims(), nullptr, nullptr, info.strides(), _arrVal.data(), VX_WRITE_ONLY, VX_MEMORY_TYPE_HOST);
         if (status != VX_SUCCESS)
@@ -145,6 +151,7 @@ class ParameterVX {
         vx_status status;
         for (uint i = 0; i < _batch_size; i++) { 
             _arrVal[i] = renew();
+            std::cerr << "\n _arrVal[i] : " << _arrVal[i];
         }
         vx_size stride_output[1] = {sizeof(float)};
         vx_size output_dims[1];

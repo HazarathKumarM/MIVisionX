@@ -196,6 +196,7 @@ TensorInfo::TensorInfo(const TensorInfo &other) {
     _max_shape = other._max_shape;
     _is_image = other._is_image;
     _is_metadata = other._is_metadata;
+    _is_external_source = other._is_external_source;
     _channels = other._channels;
     if (!other.is_metadata()) {  // For Metadata ROI buffer is not required
         allocate_host_or_pinned_mem(&_roi_buf, _batch_size * 4 * sizeof(unsigned), _mem_type);

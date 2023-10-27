@@ -57,6 +57,8 @@ Parameter<int>* core(IntParam* arg);
 
 Parameter<float>* core(FloatParam* arg);
 
+// void core_param(pParam object);
+
 using pParam = std::variant<IntParam*, FloatParam*>;
 using pParamCore = std::variant<Parameter<int>*, Parameter<float>*>;
 
