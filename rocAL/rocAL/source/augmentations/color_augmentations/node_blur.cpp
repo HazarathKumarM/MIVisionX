@@ -31,8 +31,11 @@ void BlurNode::create_node() {
     if (_node)
         return;
 
-    if(_tensor_kernel_size->info().is_external_source() == false)
+    if(_tensor_kernel_size->info().is_external_source() == false) {
         _kernel_size.create_tensor(_graph, VX_TYPE_UINT32, _batch_size);
+    } else {
+        _kernel_size.set_tensor(_tensor_kernel_size->handle());
+    }
 
     int input_layout = static_cast<int>(_inputs[0]->info().layout());
     int output_layout = static_cast<int>(_outputs[0]->info().layout());
@@ -41,7 +44,7 @@ void BlurNode::create_node() {
     vx_scalar output_layout_vx = vxCreateScalar(vxGetContext((vx_reference)_graph->get()), VX_TYPE_INT32, &output_layout);
     vx_scalar roi_type_vx = vxCreateScalar(vxGetContext((vx_reference)_graph->get()), VX_TYPE_INT32, &roi_type);
 
-    _node = vxExtRppBlur(_graph->get(), _inputs[0]->handle(), _inputs[0]->get_roi_tensor(), _outputs[0]->handle(), _kernel_size.default_tensor(), input_layout_vx, output_layout_vx,roi_type_vx);
+    _node = vxExtRppBlur(_graph->get(), _inputs[0]->handle(), _inputs[0]->get_roi_tensor(), _outputs[0]->handle(), _kernel_size.default_tensor(), input_layout_vx, output_layout_vx, roi_type_vx);
     vx_status status;
     if ((status = vxGetStatus((vx_reference)_node)) != VX_SUCCESS)
         THROW("Adding the blur (vxExtRppBlur) node failed: " + TOSTR(status))
@@ -56,11 +59,6 @@ void BlurNode::init(Tensor *kernel_size_param) {
         
     if(_tensor_kernel_size->info().is_external_source() == false) {
         _kernel_size.set_param(core(std::get<IntParam*>(kernel_size_param->get_param())));
-        std::cerr << "\n _tensor_kernel_size->info().is_external_source() == false";
-    } else {
-        std::cerr << "\n External Source Outputs is set here";
-        std::cerr << "\n TRUE";
-        _kernel_size.set_tensor(kernel_size_param->handle());
     }
 }
 

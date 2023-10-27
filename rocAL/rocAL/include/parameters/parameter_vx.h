@@ -81,7 +81,9 @@ class ParameterVX {
         update_tensor();
     }
     void set_tensor(vx_tensor external_source_tensor) {
-        _tensor = external_source_tensor;   
+        _tensor = external_source_tensor;  
+        if(_tensor == nullptr)
+            std::cerr << "\n Tensor is a null PTR"; 
     }
     
     void set_param(Parameter<T>* param) {

@@ -122,6 +122,8 @@ static vx_status VX_CALLBACK processBlur(vx_node node, const vx_reference *param
     BlurLocalData *data = NULL;
     STATUS_ERROR_CHECK(vxQueryNode(node, VX_NODE_LOCAL_DATA_PTR, &data, sizeof(data)));
     refreshBlur(node, parameters, num, data);
+    for (uint i =0; i < 5; i++)
+            std::cerr << "\n data->pKernelSize[i]" << data->pKernelSize[i];
     if (data->deviceType == AGO_TARGET_AFFINITY_GPU) {
 #if ENABLE_OPENCL
         return_status = VX_ERROR_NOT_IMPLEMENTED;

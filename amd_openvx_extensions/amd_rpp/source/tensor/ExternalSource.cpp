@@ -193,11 +193,12 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
                 int listSize = PyList_Size(pResult);
                 for (int i = 0; i < data->pSrcDesc->n; i++) { // SampleInfo - Need to Handle BatchInfo
                     pItem = PyList_GetItem(pResult, i);
+                    std::cerr << "\n Here in the PROCESSSS";
                     // resultArray[i] = PyLong_AsLong(pItem); // Use tensor ptr directly
-                    std::cerr << "\n (int)PyFloat_AsDouble(pItem)[i] : " << (int)PyFloat_AsDouble(pItem);
+                    // std::cerr << "\n (int)PyFloat_AsDouble(pItem)[i] : " << (int)PyFloat_AsDouble(pItem);
                     // static_cast<float*>(data->pDst)[i] = (float)PyFloat_AsDouble(pItem);
                     castData(data->dtype, data->pDst, pItem, i);
-                    std::cerr << "\n static_cast<int*>(data->pDst)[i] :: " << static_cast<int*>(data->pDst)[i];
+                    // std::cerr << "\n static_cast<int*>(data->pDst)[i] :: " << static_cast<int*>(data->pDst)[i];
                 }
                 Py_DECREF(pResult);
             } else {
@@ -213,6 +214,7 @@ static vx_status VX_CALLBACK processExternalSource(vx_node node, const vx_refere
     } else {
         PyErr_Print();
     }
+    std::cerr << "\n COMPLETES PROCESS OF EXTERNAL SOURCE";
     return return_status;
 }
 

@@ -166,7 +166,7 @@ rocalCreateIntParameter(RocalContext p_context, int val) {
         new_dims = { context->user_batch_size(), 1 }; // 1D Tensor
         auto output_info = TensorInfo(std::move(new_dims),
                            context->master_graph->mem_type(),
-                           RocalTensorDataType::INT32,
+                           RocalTensorDataType::UINT32,
                            RocalTensorlayout::NONE,
                            RocalColorFormat::U8); 
         output_tensor = context->master_graph->create_tensor(output_info, false);
