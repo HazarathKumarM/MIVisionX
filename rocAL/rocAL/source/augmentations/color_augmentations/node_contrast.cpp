@@ -36,13 +36,11 @@ void ContrastNode::create_node() {
         _factor.create_tensor(_graph, VX_TYPE_FLOAT32, _batch_size);
     } else {
         _factor.set_tensor(_tensor_factor->handle());
-        // _factor.create_tensor(_graph, _tensor_factor->info());
     }
     if(_tensor_center->info().is_external_source() == false) {
         _center.create_tensor(_graph, VX_TYPE_FLOAT32, _batch_size);
     } else {
         _center.set_tensor(_tensor_center->handle());
-        // _center.create_tensor(_graph, _tensor_center->info());
     }
     int input_layout = static_cast<int>(_inputs[0]->info().layout());
     int output_layout = static_cast<int>(_outputs[0]->info().layout());
@@ -68,14 +66,10 @@ void ContrastNode::init(Tensor *contrast_factor_tensor, Tensor *contrast_center_
     _tensor_center = contrast_center_tensor;
     if(_tensor_factor->info().is_external_source() == false) {
         _factor.set_param(core(std::get<FloatParam*>(contrast_factor_tensor->get_param())));
-    // } else {
-    //     _factor.set_tensor(contrast_factor_tensor->handle());
     }
-
     if(_tensor_center->info().is_external_source() == false) {
         _center.set_param(core(std::get<FloatParam*>(contrast_center_tensor->get_param())));
-    // } else {
-    //     _center.set_tensor(contrast_center_tensor->handle());
+
     }
 }
 

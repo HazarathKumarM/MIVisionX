@@ -19,6 +19,10 @@ def generate_random_numbers(count):
     """Generate a list of random numbers."""
     return [1,2,3,4,5]
 
+def generate_random_numbers1(count):
+    """Generate a list of random numbers."""
+    return [9,9,9,9,9]
+
 def draw_patches(img, idx, device):
     # image is expected as a tensor, bboxes as numpy
     if device == "gpu":
@@ -27,11 +31,13 @@ def draw_patches(img, idx, device):
     img = img.astype(np.uint8)  # Convert to 8-bit unsigned integers
     # img = img.transpose([0, 2, 3, 1])
     images_list = []
+    print("images_list",images_list)
     for im in img:
         images_list.append(im)
+    print("images_list",images_list)
     img = cv2.vconcat(images_list)
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-    cv2.imwrite("eso_blur" + str(idx) + ".png", img,
+    cv2.imwrite("eso_blur_host" + str(idx) + ".png", img,
                 [cv2.IMWRITE_PNG_COMPRESSION, 9])
 
 
@@ -65,13 +71,13 @@ def main():
                                     num_shards=world_size,
                                     random_shuffle=False)
         output = fn.external_source(images, file_path = file_path, source = "generate_random_numbers", dtype=types.INT, size=batch_size)
-        # contrast_output = fn.contrast(images,
-        #                     contrast=output,
-        #                     contrast_center=output)
-        # blur_output = fn.blur(images, window_size=output)
+        output1 = fn.external_source(images, file_path = file_path, source = "generate_random_numbers1", dtype=types.INT, size=batch_size)
+        # contrast_output = fn.contrast(images, contrast_center=output, contrast = output1)
+        blur_output = fn.blur(images, window_size=output1)
+        # # brightness = fn.brightness(images)
 
-        print("output...", output)
-        pipe.set_outputs(output)
+        # # print("output...", blur_output)
+        pipe.set_outputs(blur_output)
     pipe.build()
     
     # Dataloader
@@ -80,7 +86,7 @@ def main():
     cnt = 0
 
     # Enumerate over the Dataloader
-    for epoch in range(int(2)):
+    for epoch in range(int(1)):
         print("EPOCH:::::", epoch)
         for i, (output_list, labels) in enumerate(data_loader, 0):
             for j in range(len(output_list)):
