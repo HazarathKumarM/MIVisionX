@@ -32,15 +32,15 @@ void ContrastNode::create_node() {
     if (_node)
         return;
 
-    if(_tensor_factor->info().is_external_source() == false) {
-        _factor.create_tensor(_graph, VX_TYPE_FLOAT32, _batch_size);
-    } else {
+    if(_tensor_factor && _tensor_factor->info().is_external_source()) {
         _factor.set_tensor(_tensor_factor->handle());
-    }
-    if(_tensor_center->info().is_external_source() == false) {
-        _center.create_tensor(_graph, VX_TYPE_FLOAT32, _batch_size);
     } else {
+        _factor.create_tensor(_graph, VX_TYPE_FLOAT32, _batch_size);
+    }
+    if(_tensor_center && _tensor_center->info().is_external_source()) {
         _center.set_tensor(_tensor_center->handle());
+    } else {
+        _center.create_tensor(_graph, VX_TYPE_FLOAT32, _batch_size);
     }
     int input_layout = static_cast<int>(_inputs[0]->info().layout());
     int output_layout = static_cast<int>(_outputs[0]->info().layout());
@@ -64,18 +64,17 @@ void ContrastNode::init(Tensor *contrast_factor_tensor, Tensor *contrast_center_
     std::cerr << "\n In The init of Tensor*";
     _tensor_factor = contrast_factor_tensor;
     _tensor_center = contrast_center_tensor;
-    if(_tensor_factor->info().is_external_source() == false) {
+    if (_tensor_factor && _tensor_factor->info().is_external_source() == false) {
         _factor.set_param(core(std::get<FloatParam*>(contrast_factor_tensor->get_param())));
     }
-    if(_tensor_center->info().is_external_source() == false) {
+    if (_tensor_center && _tensor_center->info().is_external_source() == false) {
         _center.set_param(core(std::get<FloatParam*>(contrast_center_tensor->get_param())));
-
     }
 }
 
 void ContrastNode::update_node() {
-    if(_tensor_factor->info().is_external_source() == false)
+    if (_tensor_factor && _tensor_factor->info().is_external_source() == false)
         _factor.update_tensor();
-    if(_tensor_center->info().is_external_source() == false)
+    if (_tensor_center && _tensor_center->info().is_external_source() == false)
         _center.update_tensor();
 }
