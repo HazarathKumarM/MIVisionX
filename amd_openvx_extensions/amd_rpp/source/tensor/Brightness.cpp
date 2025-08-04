@@ -163,7 +163,7 @@ static vx_status VX_CALLBACK initializeBrightness(vx_node node, const vx_referen
     fillDescriptionPtrfromDims(data->pDstDesc, data->outputLayout, data->ouputTensorDims);
 
 #if ENABLE_HIP
-    hipHostMalloc(&data->pAlpha, data->pSrcDesc->n * sizeof(unsigned));
+    hipHostMalloc(&data->pAlpha, data->pSrcDesc->n * sizeof(float));
     hipHostMalloc(&data->pBeta, data->pSrcDesc->n * sizeof(float));
 #else
     data->pAlpha = new vx_float32[data->pSrcDesc->n];
